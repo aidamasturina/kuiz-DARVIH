@@ -218,37 +218,7 @@
 
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Firebase Setup untuk Carta Pemenang
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'darvih-kuiz-mbpk';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        
-        let db, auth;
-        let isFirebaseReady = false;
-
-        // Inisialisasi Pangkalan Data
-        if (firebaseConfig && Object.keys(firebaseConfig).length > 0) {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                isFirebaseReady = true;
-                
-                // Mesti log masuk awan sebelum ambil/simpan data
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    signInWithCustomToken(auth, __initial_auth_token).catch(console.error);
-                } else {
-                    signInAnonymously(auth).catch(console.error);
-                }
-            } catch (error) {
-                console.error("Ralat inisialisasi pangkalan data:", error);
-            }
-        }
-
+    <script>
         // Dedahkan fungsi kepada skop global supaya butang HTML boleh mengaksesnya
         window.startGame = startGame;
         window.showRegistration = showRegistration;
@@ -260,8 +230,6 @@
         window.showLeaderboard = showLeaderboard;
         window.hideLeaderboard = hideLeaderboard;
         window.submitScore = submitScore;
-
-        let leaderboardUnsubscribe = null;
 
         // --- DATA SOALAN ---
         // Soalan umum DARVIH diolah dengan bahasa mudah untuk MBPK berserta emoji
@@ -617,11 +585,9 @@
                 msgEl.innerText = "Jangan putus asa. Jauhi DARVIH untuk kesihatan! 💪";
             }
 
-            // Papar borang simpan nama jika Pangkalan Data bersedia
-            if (isFirebaseReady) {
-                document.getElementById('score-submission').classList.remove('hidden');
-                document.getElementById('player-name').value = registeredName;
-            }
+            // Papar borang simpan nama
+            document.getElementById('score-submission').classList.remove('hidden');
+            document.getElementById('player-name').value = registeredName;
 
             // Confetti Magic
             var duration = 3 * 1000;
@@ -668,9 +634,7 @@
         }
 
         // --- FUNGSI CARTA PEMENANG (LEADERBOARD) ---
-        async function submitScore() {
-            if (!isFirebaseReady || !auth.currentUser) return;
-            
+        function submitScore() {
             const nameInput = document.getElementById('player-name');
             const playerName = nameInput.value.trim().toUpperCase() || "ANONIM";
             
@@ -679,68 +643,62 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> MENYIMPAN...';
             btn.disabled = true;
 
-            try {
-                // Simpan rekod ke dalam awan
-                const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-                await addDoc(lbRef, {
-                    name: playerName,
-                    score: score,
-                    timestamp: Date.now()
-                });
-                
-                // Sembunyikan borang setelah berjaya
-                document.getElementById('score-submission').classList.add('hidden');
-                
-                // Buka Carta Pemenang
-                showLeaderboard();
-            } catch (error) {
-                console.error("Ralat menyimpan markah:", error);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+            setTimeout(() => {
+                try {
+                    // Simpan rekod ke dalam LocalStorage
+                    const lbKey = 'darvih-leaderboard-mbpk';
+                    let scoresList = JSON.parse(localStorage.getItem(lbKey) || '[]');
+                    
+                    scoresList.push({
+                        name: playerName,
+                        score: score,
+                        timestamp: Date.now()
+                    });
+                    
+                    localStorage.setItem(lbKey, JSON.stringify(scoresList));
+                    
+                    // Sembunyikan borang setelah berjaya
+                    document.getElementById('score-submission').classList.add('hidden');
+                    
+                    // Buka Carta Pemenang
+                    showLeaderboard();
+                } catch (error) {
+                    console.error("Ralat menyimpan markah:", error);
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }, 500); // Simulasi masa pemprosesan
         }
 
         function showLeaderboard() {
             document.getElementById('leaderboard-screen').classList.remove('hidden');
             document.getElementById('leaderboard-screen').classList.add('flex');
             
-            if (!isFirebaseReady || !auth.currentUser) {
-                document.getElementById('leaderboard-list').innerHTML = `
-                    <div class="text-center py-10 px-4 text-red-200 font-bold">
-                        <i class="fa-solid fa-triangle-exclamation text-5xl mb-4"></i><br>
-                        Carta Pemenang tidak tersedia buat masa ini.
-                    </div>`;
-                return;
-            }
-
             document.getElementById('leaderboard-list').innerHTML = `
                 <div class="text-center py-10 opacity-75 animate-pulse">
                     <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-3"></i><br>
                     Menyemak kedudukan...
                 </div>`;
 
-            const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-            
-            // Ambil data masa-nyata dari Awan
-            leaderboardUnsubscribe = onSnapshot(lbRef, (snapshot) => {
-                let scoresList = [];
-                snapshot.forEach(doc => {
-                    scoresList.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // Susun data: Markah Tertinggi di Atas. Jika seri, Masa Terawal menang.
-                scoresList.sort((a, b) => {
-                    if (b.score !== a.score) return b.score - a.score;
-                    return a.timestamp - b.timestamp;
-                });
-                
-                renderLeaderboardUI(scoresList);
-            }, (error) => {
-                console.error("Ralat mengambil senarai:", error);
-                document.getElementById('leaderboard-list').innerHTML = `
-                    <div class="text-center py-10 px-4 text-red-200">Ralat memuatkan data carta.</div>`;
-            });
+            setTimeout(() => {
+                try {
+                    const lbKey = 'darvih-leaderboard-mbpk';
+                    let scoresList = JSON.parse(localStorage.getItem(lbKey) || '[]');
+                    
+                    // Susun data: Markah Tertinggi di Atas. Jika seri, Masa Terawal menang.
+                    scoresList.sort((a, b) => {
+                        if (b.score !== a.score) return b.score - a.score;
+                        return a.timestamp - b.timestamp;
+                    });
+                    
+                    renderLeaderboardUI(scoresList);
+                } catch (error) {
+                    console.error("Ralat mengambil senarai:", error);
+                    document.getElementById('leaderboard-list').innerHTML = `
+                        <div class="text-center py-10 px-4 text-red-200">Ralat memuatkan data carta.</div>`;
+                }
+            }, 400); // Simulasi masa pemprosesan
         }
 
         function renderLeaderboardUI(scoresList) {
@@ -793,12 +751,6 @@
         function hideLeaderboard() {
             document.getElementById('leaderboard-screen').classList.add('hidden');
             document.getElementById('leaderboard-screen').classList.remove('flex');
-            
-            // Berhenti mendengar perubahan data (jimat data awan) apabila tidak dipapar
-            if (leaderboardUnsubscribe) {
-                leaderboardUnsubscribe();
-                leaderboardUnsubscribe = null;
-            }
         }
 
     </script>

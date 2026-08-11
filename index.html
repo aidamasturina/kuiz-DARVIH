@@ -150,7 +150,8 @@
         // 2. TETAPAN CARTA PEMENANG (LIVE LISTENER)
         function setupLiveLeaderboard() {
             const lbRef = collection(db, "leaderboard");
-            const q = query(lbRef, orderBy("score", "desc"), orderBy("timestamp", "asc"), limit(15)); // Papar Top 15 di sidebar
+            // KEMAS KINI: Dibuang orderBy("timestamp", "asc") untuk mengelakkan ralat "Composite Index"
+            const q = query(lbRef, orderBy("score", "desc"), limit(15)); 
             
             onSnapshot(q, (snapshot) => {
                 const grid = document.getElementById('leaderboard-grid');

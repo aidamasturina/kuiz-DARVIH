@@ -3,30 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projek HTML Saya</title>
+    <title>Eksplorasi Kuiz DARVIH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* Masukkan kod CSS tambahan anda di sini jika ada */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
+        body { font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; background-color: #f0fdf4; }
+        .btn-hover { transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-hover:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .btn-active:active { transform: translateY(1px); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        .slide-up { animation: slideUp 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Leaderboard Animations */
+        .leaderboard-card {
+            transition: all 0.4s ease;
+            animation: fadeIn 0.5s ease-in-out;
         }
+        /* Custom Scrollbar for Sidebar */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <!-- Gantikan bahagian ini dengan struktur HTML dari Langkah 1, 2, dan 3 anda -->
-    <header>
-        <h1>Kandungan Utama</h1>
-    </header>
+    <!-- Skrin Permulaan -->
+    <div id="start-screen" class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-8 text-center fade-in border-4 border-green-400">
+        <h1 class="text-4xl md:text-5xl font-bold text-green-600 mb-6 drop-shadow-sm">🌟 Kuiz Eksplorasi DARVIH 🌟</h1>
+        <p class="text-xl text-gray-600 mb-8">Mari belajar tentang bahaya Dadah, Alkohol, Rokok, Vape, Inhalan & HIV/AIDS bersama-sama!</p>
+        
+        <div class="mb-6 flex flex-col items-center">
+            <label for="playerName" class="text-lg font-bold text-gray-700 mb-2">Sila masukkan nama panggilan anda:</label>
+            <input type="text" id="playerName" placeholder="Contoh: Ali" class="w-2/3 md:w-1/2 p-4 text-center text-2xl border-4 border-blue-300 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors">
+            <p id="name-warning" class="text-red-500 font-bold mt-2 hidden">Sila masukkan nama anda sebelum mula!</p>
+        </div>
 
-    <main>
-        <p>Tahniah kerana berjaya melaksanakan langkah 2 dan 3! Sila masukkan kod anda di sini.</p>
-    </main>
+        <button onclick="requestStart()" class="btn-hover btn-active bg-gradient-to-r from-green-400 to-green-600 text-white text-3xl font-bold py-4 px-10 rounded-full shadow-lg w-full mb-4">
+            MULA MAIN ▶️
+        </button>
+        <button onclick="showLeaderboardScreen()" class="btn-hover btn-active bg-blue-100 text-blue-700 text-xl font-bold py-3 px-8 rounded-full border-2 border-blue-300 w-full">
+            🏆 Lihat Carta Pemenang
+        </button>
+    </div>
 
-    <!-- Letakkan sebarang skrip JavaScript di bawah sebelum tag penutup body -->
-    <script>
-        // Masukkan kod JavaScript anda di sini jika ada
+    <!-- Pembalut Utama Permainan (Game Wrapper - Side by Side) -->
+    <div id="game-wrapper" class="hidden w-full max-w-7xl flex flex-col lg:flex-row gap-6 justify-center items-start fade-in">
+        
+        <!-- Bahagian Kiri: Kuiz & Keputusan -->
+        <div class="w-full lg:w-2/3 flex flex-col items-center">
+            
+            <!-- Bekas Kuiz -->
+            <div id="quiz-container" class="w-full bg-white rounded-3xl shadow-2xl p-6 md:p-10 border-4 border-blue-400 relative">
+                <!-- Ikon Pembesar Suara -->
+                <button onclick="playCurrentQuestionAudio()" class="absolute top-4 right-4 bg-blue-100 p-3 rounded-full hover:bg-blue-200 transition-colors shadow-sm" aria-label="Dengar Soalan">
+                    <span class="text-2xl">🔊</span>
+                </button>
+
+                <div class="flex justify-between items-center mb-6 mt-4">
+                    <span class="text-xl font-bold text-gray-500 bg-gray-100 px-4 py-1 rounded-full" id="question-counter">Soalan 1/20</span>
+                    <span class="text-xl font-bold text-orange-500 bg-orange-100 px-4 py-1 rounded-full">Markah: <span id="score-display">0</span></span>
+                </div>
+
+                <h2 id="question-text" class="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center leading-tight fade-in">
+                    <!-- Soalan dimuatkan di sini -->
+                </h2>
+
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Pilihan jawapan dimuatkan di sini -->
+                </div>
+            </div>
+
+            <!-- Skrin Keputusan -->
+            <div id="result-screen" class="hidden w-full bg-white rounded-3xl shadow-2xl p-8 text-center fade-in border-4 border-purple-400">
+                <h1 class="text-5xl font-bold text-purple-600 mb-4" id="result-title">Tahniah! 🎉</h1>
+                <p class="text-2xl text-gray-600 mb-6" id="result-subtitle">Anda telah menamatkan eksplorasi DARVIH.</p>
+                <div class="bg-purple-100 rounded-3xl p-6 mb-8 inline-block" id="score-box">
+                    <span class="text-3xl font-bold text-purple-800">Markah Akhir:</span><br>
+                    <span class="text-7xl font-extrabold text-purple-600" id="final-score">0</span><span class="text-4xl font-bold text-purple-600">/20</span>
+                </div>
+                <br>
+                <button onclick="restartGame()" class="btn-hover bg-green-500 text-white text-2xl font-bold py-4 px-10 rounded-full shadow-lg mt-4">
+                    🔄 Main Semula / Kembali
+                </button>
+            </div>
+        </div>
+
+        <!-- Bahagian Kanan: Sidebar Carta Pemenang Live -->
+        <div id="leaderboard-sidebar" class="w-full lg:w-1/3 bg-white rounded-3xl shadow-xl p-6 border-4 border-yellow-400 flex flex-col h-auto max-h-[85vh] sticky top-4">
+            <div class="text-center mb-4 border-b-2 border-gray-100 pb-4">
+                <h2 class="text-3xl font-bold text-gray-800">🏆 Carta Pemenang</h2>
+                <p class="text-sm text-green-600 font-bold animate-pulse mt-1">🔴 Dikemas kini secara langsung (Live)</p>
+            </div>
+            
+            <!-- Grid Senarai Live -->
+            <div id="leaderboard-grid" class="flex flex-col gap-3 overflow-y-auto custom-scroll pr-2 pb-4 flex-grow">
+                <p class="text-center text-gray-500 mt-10">Memuatkan senarai pemenang...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Tetingkap Maklum Balas (Overlay) -->
+    <div id="feedback-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div id="feedback-card" class="bg-white rounded-3xl p-10 text-center transform scale-0 transition-transform duration-300 shadow-2xl">
+            <div id="feedback-icon" class="text-8xl mb-4"></div>
+            <h2 id="feedback-text" class="text-5xl font-bold mb-4"></h2>
+            <button onclick="nextQuestion()" class="mt-6 bg-blue-500 text-white text-2xl font-bold py-3 px-10 rounded-full shadow-lg hover:bg-blue-600 transition-colors">
+                Seterusnya ➡️
+            </button>
+        </div>
+    </div>
+
+    <!-- Skrip (Firebase, Logik Permainan, Audio) -->
+    <script type="module">
+        // 1. KONFIGURASI FIREBASE (V10 Modular SDK)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmtqPfE-FcqjNxqmE_7JlbPH3mqujFHXU",
+            authDomain: "kuizdarvih.firebaseapp.com",
+            projectId: "kuizdarvih",
+            storageBucket: "kuizdarvih.firebasestorage.app",
+            messagingSenderId: "1091631708047",
+            appId: "1:1091631708047:web:a390d78d00b68d692abdfa",
+            measurementId: "G-HTFLN92Z2N"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Log Masuk Tanpa Nama (Anonymous)
+        signInAnonymously(auth).catch((error) => {
+            console.error("Ralat Log Masuk Firebase:", error);
+            alert("Ralat sambungan pangkalan data. Sila pastikan Anonymous Sign-In diaktifkan di Firebase Console anda.");
+        });
+
+        // 2. TETAPAN CARTA PEMENANG (LIVE LISTENER)
+        function setupLiveLeaderboard() {
+            const lbRef = collection(db, "leaderboard");
+            const q = query(lbRef, orderBy("score", "desc"), orderBy("timestamp", "asc"), limit(15)); // Papar Top 15 di sidebar
+            
+            onSnapshot(q, (snapshot) => {
+                const grid = document.getElementById('leaderboard-grid');
+                grid.innerHTML = ''; 
+
+                if (snapshot.empty) {
+                    grid.innerHTML = '<p class="text-center text-gray-500 mt-10">Belum ada pemenang lagi. Jadilah yang pertama!</p>';
+                    return;
+                }
+
+                let rank = 1;
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let cardClass = "bg-white border-2 border-gray-100";
+                    let rankIcon = `<span class="text-xl font-bold text-gray-400">#${rank}</span>`;
+
+                    // Gaya visual untuk Tempat Ke-1, Ke-2, Ke-3
+                    if (rank === 1) { cardClass = "bg-yellow-50 border-2 border-yellow-300"; rankIcon = "<span class='text-3xl'>🥇</span>"; }
+                    else if (rank === 2) { cardClass = "bg-gray-50 border-2 border-gray-300"; rankIcon = "<span class='text-3xl'>🥈</span>"; }
+                    else if (rank === 3) { cardClass = "bg-orange-50 border-2 border-orange-300"; rankIcon = "<span class='text-3xl'>🥉</span>"; }
+
+                    const card = document.createElement('div');
+                    card.className = `leaderboard-card rounded-2xl p-3 flex items-center justify-between shadow-sm ${cardClass}`;
+                    card.innerHTML = `
+                        <div class="flex items-center gap-3 w-3/4">
+                            <div class="w-10 text-center">${rankIcon}</div>
+                            <h3 class="text-lg font-bold text-gray-800 truncate">${data.name}</h3>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xl font-extrabold text-blue-600">${data.score}</p>
+                            <p class="text-xs text-gray-500">Markah</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                    rank++;
+                });
+            }, (error) => {
+                console.error("Ralat mendapatkan Carta Pemenang:", error);
+            });
+        }
+        setupLiveLeaderboard();
+
+        // 3. DATA SOALAN DARVIH
+        const questions = [
+            { q: "Ubat yang disalahgunakan dan merosakkan otak dipanggil apa? 💊", options: ["Gula-gula", "Dadah", "Vitamin", "Makanan"], ans: 1 },
+            { q: "Minuman memabukkan yang dilarang agama dan membahayakan kesihatan ialah? 🍺", options: ["Susu", "Alkohol", "Jus Epal", "Air Kosong"], ans: 1 },
+            { q: "Asap putih yang dihisap dan merosakkan paru-paru dipanggil? 🚬", options: ["Rokok", "Kabus", "Wap Air", "Oksigen"], ans: 0 },
+            { q: "Rokok elektronik yang ada perisa manis tapi beracun dipanggil apa? 💨", options: ["Vape", "Biskut", "Nebulizer", "Penyegar Udara"], ans: 0 },
+            { q: "Bahan berbau kuat seperti gam yang bahaya jika dihidu ialah? 🧴", options: ["Minyak Wangi", "Syampu", "Inhalan", "Sabun"], ans: 2 },
+            { q: "Virus yang merosakkan sistem pertahanan badan manusia dipanggil? 🦠", options: ["Selesema", "HIV", "Batuk", "Demam"], ans: 1 },
+            { q: "Bolehkah kita menerima pelawaan orang asing untuk mencuba hisap vape? 🛑", options: ["Boleh", "Mesti Cuba", "Tidak Boleh", "Ambil dan simpan"], ans: 2 },
+            { q: "Jika kawan tawar air berbau pelik dan memabukkan, apa perlu kita buat? 🏃‍♂️", options: ["Minum sikit", "Tolak dan laporkan", "Bawa balik", "Bagi kawan lain"], ans: 1 },
+            { q: "Adakah dadah baik untuk kesihatan tubuh badan kita? 💔", options: ["Ya, sangat baik", "Tidak, ia merosakkan", "Boleh jadikan kuat", "Cepat membesar"], ans: 1 },
+            { q: "Menghidu gam boleh menyebabkan kita jadi apa? 🧠", options: ["Makin Pandai", "Wangi", "Loya dan Hilang Akal", "Kuat Berlari"], ans: 2 },
+            { q: "Sesiapa yang ditangkap memiliki dadah akan dihukum oleh siapa? 🚓", options: ["Polis", "Doktor", "Bomba", "Jururawat"], ans: 0 },
+            { q: "Bagaimana cara jauhi rakan yang suka merokok? 🙅‍♂️", options: ["Ikut mereka", "Cari kawan baik", "Tolong belikan", "Pegang rokoknya"], ans: 1 },
+            { q: "Penyakit AIDS berjangkit melalui perbuatan apa? 💉", options: ["Kongsi jarum suntikan", "Bersalaman", "Makan bersama", "Bercakap"], ans: 0 },
+            { q: "Vape mengandungi bahan bahaya yang dipanggil apa? 🧪", options: ["Gula", "Nikotin", "Garam", "Madu"], ans: 1 },
+            { q: "Apa yang terjadi pada paru-paru orang yang kuat merokok? 🫁", options: ["Makin Bersih", "Warna Hitam & Sakit", "Membesar", "Tukar Warna Warni"], ans: 1 },
+            { q: "Orang mabuk alkohol bahaya jika mereka buat apa? 🚗", options: ["Tidur", "Mandi", "Memandu Kereta", "Menyanyi"], ans: 2 },
+            { q: "Kenapa kita mesti cakap 'TIDAK' pada DARVIH? 🛡️", options: ["Sebab ia sihat", "Sebab ia mahal", "Untuk lindungi diri", "Sebab ia cantik"], ans: 2 },
+            { q: "Jika terjumpa jarum suntikan di taman, apa perlu buat? ⚠️", options: ["Kutip buat main", "Jangan sentuh, lapor dewasa", "Bawa balik rumah", "Pijak"], ans: 1 },
+            { q: "Selain keluarga, siapa boleh bantu kita jika diancam pengedar dadah? 🏫", options: ["Guru Kaunseling", "Kucing", "Peniaga Kantin", "Kawan tadika"], ans: 0 },
+            { q: "Kesihatan yang baik bermula dengan amalan apa? 🏃‍♀️", options: ["Menghisap Vape", "Gaya Hidup Sihat", "Minum Alkohol", "Tidur Sepanjang Hari"], ans: 1 }
+        ];
+
+        // 4. STATUS PERMAINAN (GAME STATE)
+        let currentQuestion = 0;
+        let score = 0;
+        let synth; 
+        let isAudioAllowed = false;
+        let playerName = "Pemain Misteri";
+
+        // 5. FUNGSI PERMAINAN
+        window.requestStart = function() {
+            const nameInput = document.getElementById('playerName').value.trim();
+            if(!nameInput) {
+                const warning = document.getElementById('name-warning');
+                warning.classList.remove('hidden');
+                warning.classList.add('fade-in');
+                return;
+            }
+            playerName = nameInput;
+
+            Tone.start().then(() => {
+                isAudioAllowed = true;
+                synth = new Tone.Synth().toDestination();
+                
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-wrapper').classList.remove('hidden');
+                document.getElementById('quiz-container').classList.remove('hidden');
+                document.getElementById('result-screen').classList.add('hidden');
+                loadQuestion();
+            });
+        };
+
+        window.showLeaderboardScreen = function() {
+            // Tunjuk Sidebar dan tukar kawasan kiri kepada mesej ringkas (tanpa skor)
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-wrapper').classList.remove('hidden');
+            document.getElementById('quiz-container').classList.add('hidden');
+            
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+            document.getElementById('result-title').innerText = "Carta Pemenang";
+            document.getElementById('result-subtitle').innerText = "Lihat kedudukan anda di sebelah kanan!";
+            document.getElementById('score-box').classList.add('hidden');
+        }
+
+        function loadQuestion() {
+            const qData = questions[currentQuestion];
+            document.getElementById('question-counter').innerText = `Soalan ${currentQuestion + 1}/${questions.length}`;
+            document.getElementById('question-text').innerText = qData.q;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            let optionsWithIndex = qData.options.map((opt, i) => ({ text: opt, index: i }));
+            optionsWithIndex = optionsWithIndex.sort(() => Math.random() - 0.5);
+
+            optionsWithIndex.forEach((opt, i) => {
+                const colors = ['bg-red-100 border-red-300 text-red-700 hover:bg-red-200', 'bg-blue-100 border-blue-300 text-blue-700 hover:bg-blue-200', 'bg-green-100 border-green-300 text-green-700 hover:bg-green-200', 'bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200'];
+                const colorClass = colors[i % colors.length];
+
+                const btn = document.createElement('button');
+                btn.className = `btn-hover btn-active text-2xl md:text-3xl font-bold py-6 px-4 rounded-2xl border-4 ${colorClass} w-full text-center h-full shadow-sm slide-up`;
+                btn.style.animationDelay = `${i * 0.1}s`;
+                btn.innerText = opt.text;
+                btn.onclick = () => checkAnswer(opt.index === qData.ans);
+                optionsContainer.appendChild(btn);
+            });
+
+            if(isAudioAllowed) {
+                setTimeout(playCurrentQuestionAudio, 500);
+            }
+        }
+
+        window.playCurrentQuestionAudio = function() {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            
+            const qData = questions[currentQuestion];
+            const cleanText = qData.q.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'ms-MY';
+            utterance.rate = 0.9; 
+            utterance.pitch = 1.1; 
+            window.speechSynthesis.speak(utterance);
+        }
+
+        window.checkAnswer = function(isCorrect) {
+            window.speechSynthesis.cancel(); 
+            const overlay = document.getElementById('feedback-overlay');
+            const card = document.getElementById('feedback-card');
+            const icon = document.getElementById('feedback-icon');
+            const text = document.getElementById('feedback-text');
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => card.classList.remove('scale-0'), 10);
+            
+            if (isCorrect) {
+                if(isAudioAllowed && synth) synth.triggerAttackRelease("C5", "8n");
+                score++;
+                document.getElementById('score-display').innerText = score;
+                icon.innerText = "✅";
+                text.innerText = "Tepat Sekali!";
+                text.className = "text-5xl font-bold mb-4 text-green-500";
+            } else {
+                if(isAudioAllowed && synth) synth.triggerAttackRelease("G3", "8n");
+                icon.innerText = "❌";
+                text.innerText = "Kurang Tepat";
+                text.className = "text-5xl font-bold mb-4 text-red-500";
+            }
+        };
+
+        window.nextQuestion = function() {
+            const overlay = document.getElementById('feedback-overlay');
+            const card = document.getElementById('feedback-card');
+            
+            card.classList.add('scale-0');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                    loadQuestion();
+                } else {
+                    endGame();
+                }
+            }, 300);
+        };
+
+        async function endGame() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+            document.getElementById('result-title').innerText = "Tahniah! 🎉";
+            document.getElementById('result-subtitle').innerText = "Anda telah menamatkan eksplorasi DARVIH.";
+            
+            const scoreBox = document.getElementById('score-box');
+            scoreBox.classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            // Kesan Hujan Confetti
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.4), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.6, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+
+            // Simpan Skor ke Firebase
+            try {
+                await addDoc(collection(db, "leaderboard"), {
+                    name: playerName,
+                    score: score,
+                    timestamp: serverTimestamp()
+                });
+                console.log("Markah berjaya disimpan secara live!");
+            } catch (error) {
+                console.error("Ralat menyimpan markah:", error);
+            }
+        }
+
+        function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+        window.restartGame = function() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('game-wrapper').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('playerName').value = ''; 
+            document.getElementById('name-warning').classList.add('hidden');
+            playerName = "Pemain Misteri";
+        };
     </script>
 </body>
 </html>

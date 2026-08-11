@@ -58,10 +58,15 @@
             
             <!-- Bekas Kuiz -->
             <div id="quiz-container" class="w-full bg-white rounded-3xl shadow-2xl p-6 md:p-10 border-4 border-blue-400 relative">
-                <!-- Ikon Pembesar Suara -->
-                <button onclick="playCurrentQuestionAudio()" class="absolute top-4 right-4 bg-blue-100 p-3 rounded-full hover:bg-blue-200 transition-colors shadow-sm" aria-label="Dengar Soalan">
-                    <span class="text-2xl">🔊</span>
-                </button>
+                <!-- Ikon Pembesar Suara dan Mute -->
+                <div class="absolute top-4 right-4 flex gap-2">
+                    <button onclick="toggleMute()" id="mute-btn" class="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition-colors shadow-sm" aria-label="Mute/Unmute">
+                        <span class="text-2xl">🔉</span>
+                    </button>
+                    <button onclick="playCurrentQuestionAudio()" class="bg-blue-100 p-3 rounded-full hover:bg-blue-200 transition-colors shadow-sm" aria-label="Dengar Soalan">
+                        <span class="text-2xl">🔊</span>
+                    </button>
+                </div>
 
                 <div class="flex justify-between items-center mb-6 mt-4">
                     <span class="text-xl font-bold text-gray-500 bg-gray-100 px-4 py-1 rounded-full" id="question-counter">Soalan 1/20</span>
@@ -103,6 +108,11 @@
             <div id="leaderboard-grid" class="flex flex-col gap-3 overflow-y-auto custom-scroll pr-2 pb-4 flex-grow">
                 <p class="text-center text-gray-500 mt-10">Memuatkan senarai pemenang...</p>
             </div>
+            
+            <!-- Butang Reset Pemenang -->
+            <button onclick="resetLeaderboard()" class="w-full mt-4 bg-red-50 text-red-600 font-bold py-3 px-4 rounded-xl hover:bg-red-100 transition-colors border-2 border-red-200">
+                🗑️ Reset Pemenang
+            </button>
         </div>
 
     </div>
@@ -121,10 +131,10 @@
     <!-- Skrip (Firebase, Logik Permainan, Audio) -->
     <script type="module">
         // 1. KONFIGURASI FIREBASE (V10 Modular SDK)
-        // Penambahan 'updateDoc' untuk kemas kini markah ala Kahoot
+        // Ditambah getDocs dan deleteDoc untuk fungsi reset
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
-        import { getFirestore, collection, addDoc, updateDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, onSnapshot, query, orderBy, limit, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -151,7 +161,6 @@
         // 2. TETAPAN CARTA PEMENANG (LIVE LISTENER)
         function setupLiveLeaderboard() {
             const lbRef = collection(db, "leaderboard");
-            // Hanya susun mengikut skor untuk elak ralat index
             const q = query(lbRef, orderBy("score", "desc"), limit(15)); 
             
             onSnapshot(q, (snapshot) => {
@@ -200,6 +209,23 @@
         }
         setupLiveLeaderboard();
 
+        // FUNGSI RESET PEMENANG
+        window.resetLeaderboard = async function() {
+            if(confirm("Adakah anda pasti mahu memadam semua rekod pemenang? Tindakan ini tidak boleh dikembalikan.")) {
+                try {
+                    const lbRef = collection(db, "leaderboard");
+                    const snapshot = await getDocs(lbRef);
+                    snapshot.forEach(async (docSnap) => {
+                        await deleteDoc(docSnap.ref);
+                    });
+                    alert("Senarai pemenang telah berjaya dikosongkan!");
+                } catch (error) {
+                    console.error("Ralat memadam senarai:", error);
+                    alert("Gagal memadam senarai. Sila cuba lagi.");
+                }
+            }
+        };
+
         // 3. DATA SOALAN DARVIH
         const questions = [
             { q: "Ubat yang disalahgunakan dan merosakkan otak dipanggil apa? 💊", options: ["Gula-gula", "Dadah", "Vitamin", "Makanan"], ans: 1 },
@@ -229,8 +255,21 @@
         let score = 0;
         let synth; 
         let isAudioAllowed = false;
+        let isMuted = false; // Penambahan status Mute
         let playerName = "";
-        let playerDocRef = null; // Menyimpan ID dokumen pemain untuk kemas kini live
+        let playerDocRef = null; 
+
+        // FUNGSI MUTE/UNMUTE
+        window.toggleMute = function() {
+            isMuted = !isMuted;
+            const muteBtn = document.getElementById('mute-btn');
+            if (isMuted) {
+                muteBtn.innerHTML = '<span class="text-2xl">🔇</span>';
+                if('speechSynthesis' in window) window.speechSynthesis.cancel(); // Hentikan suara jika sedang bercakap
+            } else {
+                muteBtn.innerHTML = '<span class="text-2xl">🔉</span>';
+            }
+        };
 
         // 5. FUNGSI PERMAINAN
         window.requestStart = async function() {
@@ -301,13 +340,13 @@
                 optionsContainer.appendChild(btn);
             });
 
-            if(isAudioAllowed) {
+            if(isAudioAllowed && !isMuted) {
                 setTimeout(playCurrentQuestionAudio, 500);
             }
         }
 
         window.playCurrentQuestionAudio = function() {
-            if (!('speechSynthesis' in window)) return;
+            if (!('speechSynthesis' in window) || isMuted) return;
             window.speechSynthesis.cancel();
             
             const qData = questions[currentQuestion];
@@ -331,7 +370,7 @@
             setTimeout(() => card.classList.remove('scale-0'), 10);
             
             if (isCorrect) {
-                if(isAudioAllowed && synth) synth.triggerAttackRelease("C5", "8n");
+                if(isAudioAllowed && synth && !isMuted) synth.triggerAttackRelease("C5", "8n");
                 score++;
                 document.getElementById('score-display').innerText = score;
                 icon.innerText = "✅";
@@ -347,7 +386,7 @@
                     }
                 }
             } else {
-                if(isAudioAllowed && synth) synth.triggerAttackRelease("G3", "8n");
+                if(isAudioAllowed && synth && !isMuted) synth.triggerAttackRelease("G3", "8n");
                 icon.innerText = "❌";
                 text.innerText = "Kurang Tepat";
                 text.className = "text-5xl font-bold mb-4 text-red-500";
@@ -400,7 +439,7 @@
         window.restartGame = function() {
             currentQuestion = 0;
             score = 0;
-            playerDocRef = null; // Kosongkan reference untuk pusingan baharu
+            playerDocRef = null; 
             playerName = "";
             document.getElementById('score-display').innerText = score;
             document.getElementById('game-wrapper').classList.add('hidden');

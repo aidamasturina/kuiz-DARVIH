@@ -131,7 +131,6 @@
     <!-- Skrip (Firebase, Logik Permainan, Audio) -->
     <script type="module">
         // 1. KONFIGURASI FIREBASE (V10 Modular SDK)
-        // Ditambah getDocs dan deleteDoc untuk fungsi reset
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
         import { getFirestore, collection, addDoc, updateDoc, onSnapshot, query, orderBy, limit, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -209,20 +208,27 @@
         }
         setupLiveLeaderboard();
 
-        // FUNGSI RESET PEMENANG
+        // FUNGSI RESET PEMENANG DENGAN KATA LALUAN
         window.resetLeaderboard = async function() {
-            if(confirm("Adakah anda pasti mahu memadam semua rekod pemenang? Tindakan ini tidak boleh dikembalikan.")) {
-                try {
-                    const lbRef = collection(db, "leaderboard");
-                    const snapshot = await getDocs(lbRef);
-                    snapshot.forEach(async (docSnap) => {
-                        await deleteDoc(docSnap.ref);
-                    });
-                    alert("Senarai pemenang telah berjaya dikosongkan!");
-                } catch (error) {
-                    console.error("Ralat memadam senarai:", error);
-                    alert("Gagal memadam senarai. Sila cuba lagi.");
+            const password = prompt("Sila masukkan kata laluan untuk reset senarai pemenang:");
+            
+            if (password === "123") {
+                if(confirm("Adakah anda pasti mahu memadam semua rekod pemenang? Tindakan ini tidak boleh dikembalikan.")) {
+                    try {
+                        const lbRef = collection(db, "leaderboard");
+                        const snapshot = await getDocs(lbRef);
+                        snapshot.forEach(async (docSnap) => {
+                            await deleteDoc(docSnap.ref);
+                        });
+                        alert("Senarai pemenang telah berjaya dikosongkan!");
+                    } catch (error) {
+                        console.error("Ralat memadam senarai:", error);
+                        alert("Gagal memadam senarai. Sila cuba lagi.");
+                    }
                 }
+            } else if (password !== null) {
+                // Jika kata laluan salah (dan bukan butang batal ditekan)
+                alert("Kata laluan salah! Tindakan reset dibatalkan.");
             }
         };
 
@@ -255,7 +261,7 @@
         let score = 0;
         let synth; 
         let isAudioAllowed = false;
-        let isMuted = false; // Penambahan status Mute
+        let isMuted = false; 
         let playerName = "";
         let playerDocRef = null; 
 
@@ -265,7 +271,7 @@
             const muteBtn = document.getElementById('mute-btn');
             if (isMuted) {
                 muteBtn.innerHTML = '<span class="text-2xl">🔇</span>';
-                if('speechSynthesis' in window) window.speechSynthesis.cancel(); // Hentikan suara jika sedang bercakap
+                if('speechSynthesis' in window) window.speechSynthesis.cancel(); 
             } else {
                 muteBtn.innerHTML = '<span class="text-2xl">🔉</span>';
             }

@@ -2,757 +2,396 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kuiz Eksplorasi DARVIH</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eksplorasi Kuiz DARVIH</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.css"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
     <style>
-        body {
-            font-family: 'Fredoka', sans-serif;
-            background-color: #8EC5FC;
-            background-image: linear-gradient(135deg, #8EC5FC 0%, #E0C3FC 100%);
-            overscroll-behavior: none;
-        }
+        body { font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; background-color: #f0fdf4; }
+        .btn-hover { transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-hover:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .btn-active:active { transform: translateY(1px); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        .slide-up { animation: slideUp 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Custom Animations */
-        @keyframes bounce-slight {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+        /* Leaderboard Animations */
+        .leaderboard-card {
+            transition: all 0.4s ease;
+            animation: fadeIn 0.5s ease-in-out;
         }
-        .animate-bounce-slight {
-            animation: bounce-slight 2s infinite ease-in-out;
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .pop-in {
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        .btn-option {
-            transition: all 0.2s;
-            box-shadow: 0 6px 0px rgba(0,0,0,0.2);
-        }
-        .btn-option:active {
-            transform: translateY(6px);
-            box-shadow: 0 0px 0px rgba(0,0,0,0.2);
-        }
-        
-        .correct-ans {
-            background-color: #4ade80 !important; /* Green */
-            color: white !important;
-            border-color: #16a34a !important;
-        }
-        .wrong-ans {
-            background-color: #f87171 !important; /* Red */
-            color: white !important;
-            border-color: #dc2626 !important;
-        }
-
-        .speak-btn {
-            transition: all 0.2s;
-        }
-        .speak-btn:hover {
-            transform: scale(1.1);
-        }
-        .speak-btn:active {
-            transform: scale(0.9);
-        }
+        /* Custom Scrollbar for Sidebar */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex items-center justify-center p-4 text-gray-800">
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div id="game-container" class="w-full max-w-2xl bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col relative h-[95vh] md:h-auto md:min-h-[600px] border-4 border-white">
+    <!-- Skrin Permulaan -->
+    <div id="start-screen" class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-8 text-center fade-in border-4 border-green-400">
+        <h1 class="text-4xl md:text-5xl font-bold text-green-600 mb-6 drop-shadow-sm">🌟 Kuiz Eksplorasi DARVIH 🌟</h1>
+        <p class="text-xl text-gray-600 mb-8">Mari belajar tentang bahaya Dadah, Alkohol, Rokok, Vape, Inhalan & HIV/AIDS bersama-sama!</p>
         
-        <!-- ================= START SCREEN ================= -->
-        <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white z-20">
-            <div class="text-6xl mb-4 animate-bounce-slight">🛡️</div>
-            <h1 class="text-4xl md:text-5xl font-bold text-center mb-4 leading-tight drop-shadow-md">
-                Kuiz Eksplorasi<br><span class="text-yellow-300">D.A.R.V.I.H</span>
-            </h1>
-            <p class="text-lg md:text-xl text-center mb-8 bg-black/20 p-4 rounded-xl backdrop-blur-sm font-medium">
-                Mari uji pengetahuan kita tentang bahaya Dadah, Alkohol, Rokok, Vape, Inhalan & HIV/AIDS!
-            </p>
-            <button onclick="showRegistration()" class="bg-yellow-400 hover:bg-yellow-300 text-indigo-900 text-2xl font-bold py-4 px-10 rounded-full shadow-[0_8px_0_#b45309] active:shadow-[0_0px_0_#b45309] active:translate-y-2 transition-all transform hover:scale-105 flex items-center gap-3">
-                <i class="fa-solid fa-play"></i> MULA MAIN
-            </button>
-            
-            <button onclick="showLeaderboard()" class="mt-6 bg-white/20 hover:bg-white/30 text-white text-xl font-bold py-3 px-8 rounded-full border-2 border-white/50 transition-all flex items-center gap-3">
-                <i class="fa-solid fa-trophy text-yellow-300"></i> CARTA PEMENANG
-            </button>
+        <div class="mb-6 flex flex-col items-center">
+            <label for="playerName" class="text-lg font-bold text-gray-700 mb-2">Sila masukkan nama panggilan anda:</label>
+            <input type="text" id="playerName" placeholder="Contoh: Ali" class="w-2/3 md:w-1/2 p-4 text-center text-2xl border-4 border-blue-300 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors">
+            <p id="name-warning" class="text-red-500 font-bold mt-2 hidden">Sila masukkan nama anda sebelum mula!</p>
         </div>
 
-        <!-- ================= REGISTRATION SCREEN ================= -->
-        <div id="registration-screen" class="hidden absolute inset-0 flex-col items-center justify-center p-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white z-20">
-            <div class="text-6xl mb-6 animate-bounce-slight">📝</div>
-            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 drop-shadow-md">
-                Sila Masukkan Nama Anda
-            </h2>
-            <div class="w-full max-w-md bg-white/20 p-8 rounded-3xl backdrop-blur-md border-4 border-white/50 text-center flex flex-col gap-6">
-                <input type="text" id="reg-player-name" placeholder="Nama Panggilan..." class="w-full text-center text-2xl p-4 border-none rounded-2xl text-indigo-900 focus:outline-none focus:ring-4 focus:ring-yellow-400 font-bold uppercase" maxlength="15">
-                <button onclick="submitRegistration()" class="w-full bg-green-500 hover:bg-green-400 text-white text-2xl font-bold py-4 px-8 rounded-2xl shadow-[0_8px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-2 transition-all flex items-center justify-center gap-3">
-                    TERUSKAN <i class="fa-solid fa-arrow-right"></i>
-                </button>
-                <button onclick="backToStart()" class="w-full bg-transparent hover:bg-white/10 text-white text-lg font-bold py-2 px-4 rounded-xl transition-all">
-                    Batal
-                </button>
-            </div>
-        </div>
+        <button onclick="requestStart()" class="btn-hover btn-active bg-gradient-to-r from-green-400 to-green-600 text-white text-3xl font-bold py-4 px-10 rounded-full shadow-lg w-full mb-4">
+            MULA MAIN ▶️
+        </button>
+        <button onclick="showLeaderboardScreen()" class="btn-hover btn-active bg-blue-100 text-blue-700 text-xl font-bold py-3 px-8 rounded-full border-2 border-blue-300 w-full">
+            🏆 Lihat Carta Pemenang
+        </button>
+    </div>
 
-        <!-- ================= GAME SCREEN ================= -->
-        <div id="game-screen" class="hidden flex-col h-full w-full">
+    <!-- Pembalut Utama Permainan (Game Wrapper - Side by Side) -->
+    <div id="game-wrapper" class="hidden w-full max-w-7xl flex flex-col lg:flex-row gap-6 justify-center items-start fade-in">
+        
+        <!-- Bahagian Kiri: Kuiz & Keputusan -->
+        <div class="w-full lg:w-2/3 flex flex-col items-center">
             
-            <!-- Header (Score & Progress) -->
-            <div class="bg-indigo-600 text-white p-4 flex justify-between items-center shadow-md shrink-0">
-                <div class="flex items-center gap-2 bg-indigo-800/50 px-4 py-2 rounded-full font-semibold">
-                    <i class="fa-solid fa-star text-yellow-400"></i>
-                    <span id="score-display">0</span>
-                </div>
-                <div class="font-bold text-lg bg-indigo-800/50 px-4 py-2 rounded-full">
-                    Soalan <span id="current-question-num">1</span>/20
-                </div>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="w-full bg-gray-200 h-3 shrink-0">
-                <div id="progress-bar" class="bg-yellow-400 h-3 transition-all duration-500 ease-out w-0 rounded-r-full shadow-[0_0_10px_rgba(250,204,21,0.7)]"></div>
-            </div>
-
-            <!-- Question Area -->
-            <div class="flex-grow flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
-                
-                <div id="question-box" class="w-full bg-blue-50 border-4 border-blue-200 rounded-2xl p-6 mb-6 text-center shadow-inner pop-in relative">
-                    <button onclick="speakCurrentQuestion()" class="speak-btn absolute top-3 right-3 bg-yellow-400 text-indigo-900 rounded-full w-10 h-10 flex items-center justify-center shadow-md" aria-label="Dengar Soalan">
-                        <i class="fa-solid fa-volume-high"></i>
-                    </button>
-                    <h2 id="question-text" class="text-2xl md:text-3xl font-bold text-indigo-900 leading-snug mt-4">
-                        <!-- Question goes here -->
-                    </h2>
-                </div>
-
-                <div id="options-container" class="w-full flex flex-col gap-4">
-                    <!-- Options injected via JS -->
-                </div>
-
-            </div>
-            
-            <!-- Feedback Overlay (Hidden by default) -->
-            <div id="feedback-overlay" class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 hidden backdrop-blur-sm">
-                <div id="feedback-box" class="bg-white p-8 rounded-3xl shadow-2xl text-center transform scale-0 transition-transform duration-300 border-8">
-                    <div id="feedback-icon" class="text-6xl mb-4"></div>
-                    <h2 id="feedback-text" class="text-4xl font-bold mb-6 text-gray-800"></h2>
-                    <button onclick="nextQuestion()" id="next-btn" class="bg-blue-500 hover:bg-blue-400 text-white text-xl font-bold py-3 px-8 rounded-full shadow-[0_6px_0_#1e3a8a] active:shadow-[0_0px_0_#1e3a8a] active:translate-y-[6px] transition-all">
-                        Seterusnya <i class="fa-solid fa-arrow-right ml-2"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= RESULT SCREEN ================= -->
-        <div id="result-screen" class="hidden absolute inset-0 flex-col items-center justify-center p-8 bg-gradient-to-b from-green-400 to-blue-500 text-white z-20">
-            <h1 class="text-5xl md:text-6xl font-bold mb-2 text-center drop-shadow-lg">Tahniah! 🎉</h1>
-            <p class="text-2xl mb-8 font-medium">Anda telah tamat kuiz!</p>
-            
-            <div class="bg-white/20 p-8 rounded-3xl backdrop-blur-md border-4 border-white/50 text-center mb-8">
-                <p class="text-xl mb-2">Markah Anda:</p>
-                <div class="text-6xl font-extrabold text-yellow-300 drop-shadow-md mb-2 flex items-center justify-center gap-2">
-                    <span id="final-score">0</span><span class="text-4xl text-white">/ 20</span>
-                </div>
-                <p id="result-message" class="text-xl font-bold mt-4"></p>
-            </div>
-
-            <!-- Name Submission Form -->
-            <div id="score-submission" class="w-full max-w-md bg-white text-gray-800 p-6 rounded-2xl shadow-lg mb-8 text-center hidden">
-                <h3 class="text-xl font-bold mb-4">Simpan Markah Anda!</h3>
-                <input type="text" id="player-name" placeholder="Nama Panggilan..." class="w-full text-center text-xl p-3 border-2 border-indigo-200 rounded-xl mb-4 focus:outline-none focus:border-indigo-500 font-bold uppercase" maxlength="15">
-                <button onclick="submitScore()" class="w-full bg-green-500 hover:bg-green-400 text-white text-xl font-bold py-3 px-6 rounded-xl shadow-[0_6px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-1 transition-all">
-                    SIMPAN NAMA <i class="fa-solid fa-check ml-2"></i>
+            <!-- Bekas Kuiz -->
+            <div id="quiz-container" class="w-full bg-white rounded-3xl shadow-2xl p-6 md:p-10 border-4 border-blue-400 relative">
+                <!-- Ikon Pembesar Suara -->
+                <button onclick="playCurrentQuestionAudio()" class="absolute top-4 right-4 bg-blue-100 p-3 rounded-full hover:bg-blue-200 transition-colors shadow-sm" aria-label="Dengar Soalan">
+                    <span class="text-2xl">🔊</span>
                 </button>
+
+                <div class="flex justify-between items-center mb-6 mt-4">
+                    <span class="text-xl font-bold text-gray-500 bg-gray-100 px-4 py-1 rounded-full" id="question-counter">Soalan 1/20</span>
+                    <span class="text-xl font-bold text-orange-500 bg-orange-100 px-4 py-1 rounded-full">Markah: <span id="score-display">0</span></span>
+                </div>
+
+                <h2 id="question-text" class="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center leading-tight fade-in">
+                    <!-- Soalan dimuatkan di sini -->
+                </h2>
+
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Pilihan jawapan dimuatkan di sini -->
+                </div>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4 w-full max-w-md justify-center">
-                <button onclick="resetGame()" class="flex-1 bg-white text-blue-600 hover:bg-gray-100 text-xl font-bold py-4 px-6 rounded-full shadow-[0_8px_0_#cbd5e1] active:shadow-[0_0px_0_#cbd5e1] active:translate-y-2 transition-all flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-rotate-right"></i> MAIN SEMULA
-                </button>
-                <button onclick="showLeaderboard()" class="flex-1 bg-yellow-400 text-indigo-900 hover:bg-yellow-300 text-xl font-bold py-4 px-6 rounded-full shadow-[0_8px_0_#b45309] active:shadow-[0_0px_0_#b45309] active:translate-y-2 transition-all flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-trophy"></i> CARTA PEMENANG
+            <!-- Skrin Keputusan -->
+            <div id="result-screen" class="hidden w-full bg-white rounded-3xl shadow-2xl p-8 text-center fade-in border-4 border-purple-400">
+                <h1 class="text-5xl font-bold text-purple-600 mb-4" id="result-title">Tahniah! 🎉</h1>
+                <p class="text-2xl text-gray-600 mb-6" id="result-subtitle">Anda telah menamatkan eksplorasi DARVIH.</p>
+                <div class="bg-purple-100 rounded-3xl p-6 mb-8 inline-block" id="score-box">
+                    <span class="text-3xl font-bold text-purple-800">Markah Akhir:</span><br>
+                    <span class="text-7xl font-extrabold text-purple-600" id="final-score">0</span><span class="text-4xl font-bold text-purple-600">/20</span>
+                </div>
+                <br>
+                <button onclick="restartGame()" class="btn-hover bg-green-500 text-white text-2xl font-bold py-4 px-10 rounded-full shadow-lg mt-4">
+                    🔄 Main Semula / Kembali
                 </button>
             </div>
         </div>
 
-        <!-- ================= LEADERBOARD SCREEN ================= -->
-        <div id="leaderboard-screen" class="hidden absolute inset-0 flex-col items-center p-6 bg-gradient-to-br from-indigo-800 to-purple-900 text-white z-30">
-            <h2 class="text-3xl md:text-5xl font-bold mb-4 text-center drop-shadow-lg text-yellow-300 flex items-center gap-3 mt-4">
-                <i class="fa-solid fa-trophy"></i> Carta Pemenang
-            </h2>
-            
-            <div class="w-full max-w-md bg-white/10 backdrop-blur-md border-4 border-white/30 rounded-3xl p-4 flex-grow overflow-hidden flex flex-col mb-6 shadow-2xl">
-                <!-- Header List -->
-                <div class="flex justify-between items-center text-lg font-bold border-b-2 border-white/20 pb-2 mb-2 px-2 text-indigo-200">
-                    <span class="w-12 text-center">Ked.</span>
-                    <span class="flex-grow text-left">Nama</span>
-                    <span class="w-20 text-center">Markah</span>
-                </div>
-                
-                <!-- Scrollable List -->
-                <div id="leaderboard-list" class="flex-grow overflow-y-auto pr-2 space-y-2 flex flex-col justify-start">
-                    <div class="text-center py-10 opacity-75">
-                        <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><br>
-                        Memuatkan data...
-                    </div>
-                </div>
+        <!-- Bahagian Kanan: Sidebar Carta Pemenang Live -->
+        <div id="leaderboard-sidebar" class="w-full lg:w-1/3 bg-white rounded-3xl shadow-xl p-6 border-4 border-yellow-400 flex flex-col h-auto max-h-[85vh] sticky top-4">
+            <div class="text-center mb-4 border-b-2 border-gray-100 pb-4">
+                <h2 class="text-3xl font-bold text-gray-800">🏆 Carta Pemenang</h2>
+                <p class="text-sm text-green-600 font-bold animate-pulse mt-1">🔴 Dikemas kini secara langsung (Live)</p>
             </div>
-
-            <button onclick="hideLeaderboard()" class="shrink-0 bg-white text-indigo-900 hover:bg-gray-100 text-xl font-bold py-3 px-10 rounded-full shadow-[0_6px_0_#cbd5e1] active:shadow-[0_0px_0_#cbd5e1] active:translate-y-[6px] transition-all flex items-center gap-3 mb-2">
-                <i class="fa-solid fa-xmark"></i> TUTUP
-            </button>
+            
+            <!-- Grid Senarai Live -->
+            <div id="leaderboard-grid" class="flex flex-col gap-3 overflow-y-auto custom-scroll pr-2 pb-4 flex-grow">
+                <p class="text-center text-gray-500 mt-10">Memuatkan senarai pemenang...</p>
+            </div>
         </div>
 
     </div>
 
-    <script>
-        // Dedahkan fungsi kepada skop global supaya butang HTML boleh mengaksesnya
-        window.startGame = startGame;
-        window.showRegistration = showRegistration;
-        window.submitRegistration = submitRegistration;
-        window.backToStart = backToStart;
-        window.speakCurrentQuestion = speakCurrentQuestion;
-        window.nextQuestion = nextQuestion;
-        window.resetGame = resetGame;
-        window.showLeaderboard = showLeaderboard;
-        window.hideLeaderboard = hideLeaderboard;
-        window.submitScore = submitScore;
+    <!-- Tetingkap Maklum Balas (Overlay) -->
+    <div id="feedback-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div id="feedback-card" class="bg-white rounded-3xl p-10 text-center transform scale-0 transition-transform duration-300 shadow-2xl">
+            <div id="feedback-icon" class="text-8xl mb-4"></div>
+            <h2 id="feedback-text" class="text-5xl font-bold mb-4"></h2>
+            <button onclick="nextQuestion()" class="mt-6 bg-blue-500 text-white text-2xl font-bold py-3 px-10 rounded-full shadow-lg hover:bg-blue-600 transition-colors">
+                Seterusnya ➡️
+            </button>
+        </div>
+    </div>
 
-        // --- DATA SOALAN ---
-        // Soalan umum DARVIH diolah dengan bahasa mudah untuk MBPK berserta emoji
-        const rawQuestions = [
-            { q: "Apakah maksud huruf 'D' dalam perkataan DARVIH?", options: ["Dadah 💊", "Duit 💰", "Daun 🍃"], ans: 0 },
-            { q: "Apakah maksud huruf 'A' dalam perkataan DARVIH?", options: ["Alkohol 🍺", "Air Manis 🧃", "Ais Krim 🍦"], ans: 0 },
-            { q: "Apakah kesan buruk menghisap rokok kepada tubuh badan kita?", options: ["Merosakkan paru-paru 🫁", "Menyihatkan badan 💪", "Mata jadi terang 👀"], ans: 0 },
-            { q: "Vape adalah peranti elektronik. Adakah vape selamat untuk murid?", options: ["Tidak selamat ❌", "Sangat selamat ✅", "Boleh cuba sedikit 🤏"], ans: 0 },
-            { q: "Perbuatan menghidu gam atau pelarut cat dipanggil apa?", options: ["Inhalan 🧴", "Mewarna 🎨", "Masakan 🍲"], ans: 0 },
-            { q: "Apakah penyakit berbahaya berjangkit akibat kongsi jarum dadah?", options: ["HIV / AIDS 🦠", "Demam Selesema 🤒", "Sakit Perut 🤢"], ans: 0 },
-            { q: "Jika orang tak dikenali beri pil pelik, apa perlu anda buat?", options: ["Tolak dan lapor guru 🏃‍♂️", "Ambil dan makan 😋", "Simpan dalam beg 🎒"], ans: 0 },
-            { q: "Orang yang mabuk akibat minum banyak alkohol selalunya akan...", options: ["Hilang akal & kawalan 😵‍💫", "Jadi pandai 🧠", "Tidur dengan nyenyak 😴"], ans: 0 },
-            { q: "Apakah slogan kita terhadap gejala DARVIH?", options: ["Katakan TIDAK 🛑", "Katakan YA ✅", "Diam sahaja 🤐"], ans: 0 },
-            { q: "Siapa patut kita minta bantuan jika kawan ajak hisap rokok?", options: ["Guru dan Ibu Bapa 👨‍🏫", "Kawan lain 🧒", "Orang asing 👤"], ans: 0 },
-            { q: "Menghidu gam beracun (inhalan) akan merosakkan apa?", options: ["Saraf otak 🧠", "Kuku jari 💅", "Rambut 💇"], ans: 0 },
-            { q: "Walaupun vape berbau buah-buahan, di dalamnya ada apa?", options: ["Racun kimia 🧪", "Jus strawberi 🍓", "Air kosong 💧"], ans: 0 },
-            { q: "Menghisap rokok di dalam kawasan sekolah adalah...", options: ["Langgar undang-undang 👮", "Perbuatan yang baik 👍", "Hak masing-masing 🤷"], ans: 0 },
-            { q: "Jika kawan ajak ponteng hisap vape, apa patut anda buat?", options: ["Nasihat dan masuk kelas 🏫", "Ikut mereka ponteng 🏃", "Tolong perhatikan guru 👀"], ans: 0 },
-            { q: "Virus HIV sangat bahaya kerana pesakit akan...", options: ["Sangat mudah jatuh sakit 🤒", "Menjadi sangat kuat 💪", "Boleh terbang 🦸"], ans: 0 },
-            { q: "Bawa kenderaan selepas minum alkohol boleh sebabkan apa?", options: ["Kemalangan jalan raya 💥", "Sampai rumah cepat 🏎️", "Kereta jadi laju 🚘"], ans: 0 },
-            { q: "Dadah di jalanan dijual oleh orang jahat untuk...", options: ["Merosakkan manusia 🧟", "Ubat batuk 😷", "Nampak bergaya 🕶️"], ans: 0 },
-            { q: "Antara ini, mana gaya hidup sihat untuk jauhi DARVIH?", options: ["Bersenam & riadah 🏃‍♀️", "Tidur sepanjang hari 😴", "Main permainan video 24 jam 🎮"], ans: 0 },
-            { q: "Jumpa jarum suntikan kotor di taman. Apa mesti anda buat?", options: ["Jangan sentuh & lapor 🚫", "Ambil dan buat main 🤹", "Bawa balik rumah 🏠"], ans: 0 },
-            { q: "Kenapa Pendidikan DARVIH diajar kepada murid sekolah?", options: ["Lindungi keselamatan murid 🛡️", "Saja nak buang masa ⏱️", "Syarat lulus periksa 📝"], ans: 0 }
+    <!-- Skrip (Firebase, Logik Permainan, Audio) -->
+    <script type="module">
+        // 1. KONFIGURASI FIREBASE (V10 Modular SDK)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmtqPfE-FcqjNxqmE_7JlbPH3mqujFHXU",
+            authDomain: "kuizdarvih.firebaseapp.com",
+            projectId: "kuizdarvih",
+            storageBucket: "kuizdarvih.firebasestorage.app",
+            messagingSenderId: "1091631708047",
+            appId: "1:1091631708047:web:a390d78d00b68d692abdfa",
+            measurementId: "G-HTFLN92Z2N"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Log Masuk Tanpa Nama (Anonymous)
+        signInAnonymously(auth).catch((error) => {
+            console.error("Ralat Log Masuk Firebase:", error);
+            alert("Ralat sambungan pangkalan data. Sila pastikan Anonymous Sign-In diaktifkan di Firebase Console anda.");
+        });
+
+        // 2. TETAPAN CARTA PEMENANG (LIVE LISTENER)
+        function setupLiveLeaderboard() {
+            const lbRef = collection(db, "leaderboard");
+            const q = query(lbRef, orderBy("score", "desc"), orderBy("timestamp", "asc"), limit(15)); // Papar Top 15 di sidebar
+            
+            onSnapshot(q, (snapshot) => {
+                const grid = document.getElementById('leaderboard-grid');
+                grid.innerHTML = ''; 
+
+                if (snapshot.empty) {
+                    grid.innerHTML = '<p class="text-center text-gray-500 mt-10">Belum ada pemenang lagi. Jadilah yang pertama!</p>';
+                    return;
+                }
+
+                let rank = 1;
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let cardClass = "bg-white border-2 border-gray-100";
+                    let rankIcon = `<span class="text-xl font-bold text-gray-400">#${rank}</span>`;
+
+                    // Gaya visual untuk Tempat Ke-1, Ke-2, Ke-3
+                    if (rank === 1) { cardClass = "bg-yellow-50 border-2 border-yellow-300"; rankIcon = "<span class='text-3xl'>🥇</span>"; }
+                    else if (rank === 2) { cardClass = "bg-gray-50 border-2 border-gray-300"; rankIcon = "<span class='text-3xl'>🥈</span>"; }
+                    else if (rank === 3) { cardClass = "bg-orange-50 border-2 border-orange-300"; rankIcon = "<span class='text-3xl'>🥉</span>"; }
+
+                    const card = document.createElement('div');
+                    card.className = `leaderboard-card rounded-2xl p-3 flex items-center justify-between shadow-sm ${cardClass}`;
+                    card.innerHTML = `
+                        <div class="flex items-center gap-3 w-3/4">
+                            <div class="w-10 text-center">${rankIcon}</div>
+                            <h3 class="text-lg font-bold text-gray-800 truncate">${data.name}</h3>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xl font-extrabold text-blue-600">${data.score}</p>
+                            <p class="text-xs text-gray-500">Markah</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                    rank++;
+                });
+            }, (error) => {
+                console.error("Ralat mendapatkan Carta Pemenang:", error);
+            });
+        }
+        setupLiveLeaderboard();
+
+        // 3. DATA SOALAN DARVIH
+        const questions = [
+            { q: "Ubat yang disalahgunakan dan merosakkan otak dipanggil apa? 💊", options: ["Gula-gula", "Dadah", "Vitamin", "Makanan"], ans: 1 },
+            { q: "Minuman memabukkan yang dilarang agama dan membahayakan kesihatan ialah? 🍺", options: ["Susu", "Alkohol", "Jus Epal", "Air Kosong"], ans: 1 },
+            { q: "Asap putih yang dihisap dan merosakkan paru-paru dipanggil? 🚬", options: ["Rokok", "Kabus", "Wap Air", "Oksigen"], ans: 0 },
+            { q: "Rokok elektronik yang ada perisa manis tapi beracun dipanggil apa? 💨", options: ["Vape", "Biskut", "Nebulizer", "Penyegar Udara"], ans: 0 },
+            { q: "Bahan berbau kuat seperti gam yang bahaya jika dihidu ialah? 🧴", options: ["Minyak Wangi", "Syampu", "Inhalan", "Sabun"], ans: 2 },
+            { q: "Virus yang merosakkan sistem pertahanan badan manusia dipanggil? 🦠", options: ["Selesema", "HIV", "Batuk", "Demam"], ans: 1 },
+            { q: "Bolehkah kita menerima pelawaan orang asing untuk mencuba hisap vape? 🛑", options: ["Boleh", "Mesti Cuba", "Tidak Boleh", "Ambil dan simpan"], ans: 2 },
+            { q: "Jika kawan tawar air berbau pelik dan memabukkan, apa perlu kita buat? 🏃‍♂️", options: ["Minum sikit", "Tolak dan laporkan", "Bawa balik", "Bagi kawan lain"], ans: 1 },
+            { q: "Adakah dadah baik untuk kesihatan tubuh badan kita? 💔", options: ["Ya, sangat baik", "Tidak, ia merosakkan", "Boleh jadikan kuat", "Cepat membesar"], ans: 1 },
+            { q: "Menghidu gam boleh menyebabkan kita jadi apa? 🧠", options: ["Makin Pandai", "Wangi", "Loya dan Hilang Akal", "Kuat Berlari"], ans: 2 },
+            { q: "Sesiapa yang ditangkap memiliki dadah akan dihukum oleh siapa? 🚓", options: ["Polis", "Doktor", "Bomba", "Jururawat"], ans: 0 },
+            { q: "Bagaimana cara jauhi rakan yang suka merokok? 🙅‍♂️", options: ["Ikut mereka", "Cari kawan baik", "Tolong belikan", "Pegang rokoknya"], ans: 1 },
+            { q: "Penyakit AIDS berjangkit melalui perbuatan apa? 💉", options: ["Kongsi jarum suntikan", "Bersalaman", "Makan bersama", "Bercakap"], ans: 0 },
+            { q: "Vape mengandungi bahan bahaya yang dipanggil apa? 🧪", options: ["Gula", "Nikotin", "Garam", "Madu"], ans: 1 },
+            { q: "Apa yang terjadi pada paru-paru orang yang kuat merokok? 🫁", options: ["Makin Bersih", "Warna Hitam & Sakit", "Membesar", "Tukar Warna Warni"], ans: 1 },
+            { q: "Orang mabuk alkohol bahaya jika mereka buat apa? 🚗", options: ["Tidur", "Mandi", "Memandu Kereta", "Menyanyi"], ans: 2 },
+            { q: "Kenapa kita mesti cakap 'TIDAK' pada DARVIH? 🛡️", options: ["Sebab ia sihat", "Sebab ia mahal", "Untuk lindungi diri", "Sebab ia cantik"], ans: 2 },
+            { q: "Jika terjumpa jarum suntikan di taman, apa perlu buat? ⚠️", options: ["Kutip buat main", "Jangan sentuh, lapor dewasa", "Bawa balik rumah", "Pijak"], ans: 1 },
+            { q: "Selain keluarga, siapa boleh bantu kita jika diancam pengedar dadah? 🏫", options: ["Guru Kaunseling", "Kucing", "Peniaga Kantin", "Kawan tadika"], ans: 0 },
+            { q: "Kesihatan yang baik bermula dengan amalan apa? 🏃‍♀️", options: ["Menghisap Vape", "Gaya Hidup Sihat", "Minum Alkohol", "Tidur Sepanjang Hari"], ans: 1 }
         ];
 
-        // --- STATE VARIABLES ---
-        let currentQuestions = [];
-        let currentIndex = 0;
+        // 4. STATUS PERMAINAN (GAME STATE)
+        let currentQuestion = 0;
         let score = 0;
-        let isAnswering = false;
-        let registeredName = "";
+        let synth; 
+        let isAudioAllowed = false;
+        let playerName = "Pemain Misteri";
 
-        // Tone.js Synths
-        let synthCorrect;
-        let synthWrong;
-        let isAudioReady = false;
-
-        // Web Speech API
-        const speechSynthesis = window.speechSynthesis;
-        let malayVoice = null;
-        let autoSpeak = true; // Boleh dimatikan atau dihidupkan jika perlu
-
-        // --- HELPER FUNCTIONS ---
-        // Shuffle array to randomize options
-        function shuffleArray(array) {
-            let currentIndex = array.length, randomIndex;
-            while (currentIndex != 0) {
-                randomIndex = Math.floor(Math.random() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-            }
-            return array;
-        }
-
-        // Initialize Audio context on first user interaction
-        async function initAudio() {
-            if (!isAudioReady) {
-                await Tone.start();
-                synthCorrect = new Tone.PolySynth().toDestination();
-                synthWrong = new Tone.PolySynth().toDestination();
-                // Lower volume a bit
-                synthCorrect.volume.value = -5;
-                synthWrong.volume.value = -5;
-                isAudioReady = true;
-
-                // Prepare Text-to-Speech voices
-                const voices = speechSynthesis.getVoices();
-                // Allow fallback to Indonesian if ms-MY is missing
-                malayVoice = voices.find(voice => voice.lang === 'ms-MY' || voice.lang === 'ms' || voice.lang.includes('id'));
-            }
-        }
-        
-        // Handle voice loading issues on some browsers
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = () => {
-                const voices = speechSynthesis.getVoices();
-                if(!malayVoice){
-                    malayVoice = voices.find(voice => voice.lang === 'ms-MY' || voice.lang === 'ms' || voice.lang.includes('id'));
-                }
-            };
-        }
-
-        function speakText(text) {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel(); // Stop if already speaking
-            }
-            if (text !== '') {
-                const utterance = new SpeechSynthesisUtterance(text);
-                if (malayVoice) {
-                    utterance.voice = malayVoice;
-                }
-                utterance.rate = 0.9; // Sedikit perlahan untuk MBPK
-                utterance.pitch = 1.1; // Sedikit tinggi supaya mesra kanak-kanak
-                speechSynthesis.speak(utterance);
-            }
-        }
-
-        function speakCurrentQuestion() {
-            const qData = currentQuestions[currentIndex];
-            // Bersihkan emoji dari teks untuk bacaan yang lebih baik
-            const cleanQuestion = qData.question.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F300}-\u{1F5FF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}\u{20D0}-\u{20FF}]/gu, '');
-            
-            let textToSpeak = cleanQuestion + "... Pilihan jawapannya ialah: ";
-            qData.options.forEach((optText, i) => {
-                 const cleanOpt = optText.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F300}-\u{1F5FF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}\u{20D0}-\u{20FF}]/gu, '');
-                 textToSpeak += `${i+1}, ${cleanOpt}. ... `;
-            });
-
-            speakText(textToSpeak);
-        }
-
-        function playSound(type) {
-            if (!isAudioReady) return;
-            if (type === 'correct') {
-                // Happy bright sound
-                synthCorrect.triggerAttackRelease(["C5", "E5", "G5", "C6"], "0.3");
-            } else {
-                // Sad low sound
-                synthWrong.triggerAttackRelease(["C3", "Eb3"], "0.5");
-            }
-        }
-
-        // --- GAME LOGIC ---
-        function showRegistration() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('start-screen').classList.remove('flex');
-            
-            const regScreen = document.getElementById('registration-screen');
-            regScreen.classList.remove('hidden');
-            regScreen.classList.add('flex');
-            
-            setTimeout(() => {
-                document.getElementById('reg-player-name').focus();
-            }, 100);
-        }
-
-        function backToStart() {
-            document.getElementById('registration-screen').classList.add('hidden');
-            document.getElementById('registration-screen').classList.remove('flex');
-            
-            document.getElementById('start-screen').classList.remove('hidden');
-            document.getElementById('start-screen').classList.add('flex');
-        }
-
-        function submitRegistration() {
-            const nameInput = document.getElementById('reg-player-name');
-            const name = nameInput.value.trim().toUpperCase();
-            
-            if (name === "") {
-                nameInput.classList.add('ring-4', 'ring-red-500');
-                setTimeout(() => nameInput.classList.remove('ring-4', 'ring-red-500'), 500);
-                nameInput.placeholder = "Sila isi nama!";
+        // 5. FUNGSI PERMAINAN
+        window.requestStart = function() {
+            const nameInput = document.getElementById('playerName').value.trim();
+            if(!nameInput) {
+                const warning = document.getElementById('name-warning');
+                warning.classList.remove('hidden');
+                warning.classList.add('fade-in');
                 return;
             }
-            
-            registeredName = name;
-            
-            document.getElementById('registration-screen').classList.add('hidden');
-            document.getElementById('registration-screen').classList.remove('flex');
-            
-            startGame();
-        }
+            playerName = nameInput;
 
-        async function startGame() {
-            await initAudio(); // Start Audio Context
-            
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('game-screen').classList.add('flex');
-            
-            // Prepare questions (we map them to remember the original correct answer text)
-            currentQuestions = rawQuestions.map(q => {
-                let correctAnswerText = q.options[q.ans];
-                let shuffledOptions = shuffleArray([...q.options]);
-                let correctIndex = shuffledOptions.indexOf(correctAnswerText);
-                return {
-                    question: q.q,
-                    options: shuffledOptions,
-                    correctIndex: correctIndex
-                };
+            Tone.start().then(() => {
+                isAudioAllowed = true;
+                synth = new Tone.Synth().toDestination();
+                
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-wrapper').classList.remove('hidden');
+                document.getElementById('quiz-container').classList.remove('hidden');
+                document.getElementById('result-screen').classList.add('hidden');
+                loadQuestion();
             });
-            
-            // Shuffle question order slightly for variety, but we want all 20.
-            currentQuestions = shuffleArray(currentQuestions);
+        };
 
-            currentIndex = 0;
-            score = 0;
-            updateUI();
-            loadQuestion();
+        window.showLeaderboardScreen = function() {
+            // Tunjuk Sidebar dan tukar kawasan kiri kepada mesej ringkas (tanpa skor)
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-wrapper').classList.remove('hidden');
+            document.getElementById('quiz-container').classList.add('hidden');
+            
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+            document.getElementById('result-title').innerText = "Carta Pemenang";
+            document.getElementById('result-subtitle').innerText = "Lihat kedudukan anda di sebelah kanan!";
+            document.getElementById('score-box').classList.add('hidden');
         }
 
         function loadQuestion() {
-            isAnswering = true; // Allow clicking
-            const qData = currentQuestions[currentIndex];
-            
-            // Stop any ongoing speech when loading a new question
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-            }
-
-            // Reset animations
-            const qBox = document.getElementById('question-box');
-            qBox.classList.remove('pop-in');
-            void qBox.offsetWidth; // trigger reflow
-            qBox.classList.add('pop-in');
-
-            document.getElementById('question-text').innerText = qData.question;
-            document.getElementById('current-question-num').innerText = currentIndex + 1;
+            const qData = questions[currentQuestion];
+            document.getElementById('question-counter').innerText = `Soalan ${currentQuestion + 1}/${questions.length}`;
+            document.getElementById('question-text').innerText = qData.q;
             
             const optionsContainer = document.getElementById('options-container');
             optionsContainer.innerHTML = '';
+            
+            let optionsWithIndex = qData.options.map((opt, i) => ({ text: opt, index: i }));
+            optionsWithIndex = optionsWithIndex.sort(() => Math.random() - 0.5);
 
-            // Render buttons
-            qData.options.forEach((optText, index) => {
+            optionsWithIndex.forEach((opt, i) => {
+                const colors = ['bg-red-100 border-red-300 text-red-700 hover:bg-red-200', 'bg-blue-100 border-blue-300 text-blue-700 hover:bg-blue-200', 'bg-green-100 border-green-300 text-green-700 hover:bg-green-200', 'bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200'];
+                const colorClass = colors[i % colors.length];
+
                 const btn = document.createElement('button');
-                btn.className = `btn-option w-full bg-white border-2 border-indigo-200 text-indigo-900 text-xl md:text-2xl font-semibold py-4 px-6 rounded-2xl flex items-center justify-between hover:bg-indigo-50`;
-                btn.innerHTML = `<span>${optText}</span> <div class="w-8 h-8 rounded-full border-2 border-indigo-200 flex items-center justify-center icon-container"></div>`;
-                btn.onclick = () => selectOption(index, btn);
+                btn.className = `btn-hover btn-active text-2xl md:text-3xl font-bold py-6 px-4 rounded-2xl border-4 ${colorClass} w-full text-center h-full shadow-sm slide-up`;
+                btn.style.animationDelay = `${i * 0.1}s`;
+                btn.innerText = opt.text;
+                btn.onclick = () => checkAnswer(opt.index === qData.ans);
                 optionsContainer.appendChild(btn);
             });
 
-            updateProgress();
-
-            if (autoSpeak && isAudioReady) {
-                // Tunda sedikit supaya tidak mengejutkan
-                setTimeout(speakCurrentQuestion, 500); 
+            if(isAudioAllowed) {
+                setTimeout(playCurrentQuestionAudio, 500);
             }
         }
 
-        function selectOption(selectedIndex, btnElement) {
-            if (!isAnswering) return; // Prevent multiple clicks
-            isAnswering = false;
-
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-            }
-
-            const qData = currentQuestions[currentIndex];
-            const isCorrect = (selectedIndex === qData.correctIndex);
+        window.playCurrentQuestionAudio = function() {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
             
-            const allBtns = document.getElementById('options-container').children;
-            
-            // Highlight answers
-            for (let i = 0; i < allBtns.length; i++) {
-                allBtns[i].disabled = true; // disable all
-                const iconContainer = allBtns[i].querySelector('.icon-container');
-                
-                if (i === qData.correctIndex) {
-                    allBtns[i].classList.add('correct-ans');
-                    iconContainer.innerHTML = '<i class="fa-solid fa-check text-white"></i>';
-                    iconContainer.classList.add('border-white');
-                } else if (i === selectedIndex && !isCorrect) {
-                    allBtns[i].classList.add('wrong-ans');
-                    iconContainer.innerHTML = '<i class="fa-solid fa-xmark text-white"></i>';
-                    iconContainer.classList.add('border-white');
-                }
-            }
+            const qData = questions[currentQuestion];
+            const cleanText = qData.q.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
 
-            if (isCorrect) {
-                score++;
-                playSound('correct');
-            } else {
-                playSound('wrong');
-            }
-
-            updateUI();
-            
-            // Show Feedback Overlay after short delay
-            setTimeout(() => {
-                showFeedback(isCorrect);
-            }, 600);
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'ms-MY';
+            utterance.rate = 0.9; 
+            utterance.pitch = 1.1; 
+            window.speechSynthesis.speak(utterance);
         }
 
-        function showFeedback(isCorrect) {
+        window.checkAnswer = function(isCorrect) {
+            window.speechSynthesis.cancel(); 
             const overlay = document.getElementById('feedback-overlay');
-            const box = document.getElementById('feedback-box');
+            const card = document.getElementById('feedback-card');
             const icon = document.getElementById('feedback-icon');
             const text = document.getElementById('feedback-text');
-            const nextBtn = document.getElementById('next-btn');
 
             overlay.classList.remove('hidden');
+            setTimeout(() => card.classList.remove('scale-0'), 10);
             
-            if(isCorrect) {
-                box.className = "bg-white p-8 rounded-3xl shadow-2xl text-center transform scale-0 transition-transform duration-300 border-8 border-green-400";
-                icon.innerHTML = "🌟";
-                icon.className = "text-7xl mb-4 animate-bounce";
+            if (isCorrect) {
+                if(isAudioAllowed && synth) synth.triggerAttackRelease("C5", "8n");
+                score++;
+                document.getElementById('score-display').innerText = score;
+                icon.innerText = "✅";
                 text.innerText = "Tepat Sekali!";
-                text.className = "text-4xl font-bold mb-6 text-green-500";
-                nextBtn.className = "bg-green-500 hover:bg-green-400 text-white text-xl font-bold py-3 px-8 rounded-full shadow-[0_6px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-[6px] transition-all";
+                text.className = "text-5xl font-bold mb-4 text-green-500";
             } else {
-                box.className = "bg-white p-8 rounded-3xl shadow-2xl text-center transform scale-0 transition-transform duration-300 border-8 border-red-400";
-                icon.innerHTML = "Oops! 🥺";
-                icon.className = "text-7xl mb-4";
-                text.innerText = "Kurang Tepat.";
-                text.className = "text-4xl font-bold mb-6 text-red-500";
-                nextBtn.className = "bg-red-500 hover:bg-red-400 text-white text-xl font-bold py-3 px-8 rounded-full shadow-[0_6px_0_#b91c1c] active:shadow-[0_0px_0_#b91c1c] active:translate-y-[6px] transition-all";
+                if(isAudioAllowed && synth) synth.triggerAttackRelease("G3", "8n");
+                icon.innerText = "❌";
+                text.innerText = "Kurang Tepat";
+                text.className = "text-5xl font-bold mb-4 text-red-500";
             }
+        };
 
-            // Trigger scale animation
-            setTimeout(() => {
-                box.classList.remove('scale-0');
-                box.classList.add('scale-100');
-            }, 50);
-        }
-
-        function nextQuestion() {
-            // Hide feedback
+        window.nextQuestion = function() {
             const overlay = document.getElementById('feedback-overlay');
-            const box = document.getElementById('feedback-box');
-            box.classList.remove('scale-100');
-            box.classList.add('scale-0');
+            const card = document.getElementById('feedback-card');
             
+            card.classList.add('scale-0');
             setTimeout(() => {
                 overlay.classList.add('hidden');
-                
-                currentIndex++;
-                if (currentIndex < currentQuestions.length) {
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
                     loadQuestion();
                 } else {
                     endGame();
                 }
-            }, 300); // Wait for scale down animation
-        }
+            }, 300);
+        };
 
-        function updateUI() {
-            document.getElementById('score-display').innerText = score;
-        }
-
-        function updateProgress() {
-            const progressPercent = ((currentIndex) / currentQuestions.length) * 100;
-            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
-        }
-
-        function endGame() {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('flex');
+        async function endGame() {
+            document.getElementById('quiz-container').classList.add('hidden');
             
             const resultScreen = document.getElementById('result-screen');
             resultScreen.classList.remove('hidden');
-            resultScreen.classList.add('flex');
-
+            document.getElementById('result-title').innerText = "Tahniah! 🎉";
+            document.getElementById('result-subtitle').innerText = "Anda telah menamatkan eksplorasi DARVIH.";
+            
+            const scoreBox = document.getElementById('score-box');
+            scoreBox.classList.remove('hidden');
             document.getElementById('final-score').innerText = score;
 
-            const msgEl = document.getElementById('result-message');
-            if (score === 20) {
-                msgEl.innerText = "Sempurna! Anda Duta Anti-DARVIH yang hebat! 👑";
-            } else if (score >= 15) {
-                msgEl.innerText = "Sangat bagus! Teruskan gaya hidup sihat! 👍";
-            } else if (score >= 10) {
-                msgEl.innerText = "Boleh tahan. Mari belajar lagi tentang bahaya DARVIH. 📚";
-            } else {
-                msgEl.innerText = "Jangan putus asa. Jauhi DARVIH untuk kesihatan! 💪";
-            }
-
-            // Papar borang simpan nama
-            document.getElementById('score-submission').classList.remove('hidden');
-            document.getElementById('player-name').value = registeredName;
-
-            // Confetti Magic
+            // Kesan Hujan Confetti
             var duration = 3 * 1000;
             var animationEnd = Date.now() + duration;
-            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
-
-            function randomInRange(min, max) {
-              return Math.random() * (max - min) + min;
-            }
-
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
             var interval = setInterval(function() {
-              var timeLeft = animationEnd - Date.now();
-
-              if (timeLeft <= 0) {
-                return clearInterval(interval);
-              }
-
-              var particleCount = 50 * (timeLeft / duration);
-              confetti(Object.assign({}, defaults, { particleCount,
-                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-              }));
-              confetti(Object.assign({}, defaults, { particleCount,
-                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-              }));
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.4), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.6, 0.9), y: Math.random() - 0.2 } }));
             }, 250);
-            
-            if(isAudioReady) {
-                 synthCorrect.triggerAttackRelease(["C5", "E5", "G5", "C6", "E6"], "1.5");
+
+            // Simpan Skor ke Firebase
+            try {
+                await addDoc(collection(db, "leaderboard"), {
+                    name: playerName,
+                    score: score,
+                    timestamp: serverTimestamp()
+                });
+                console.log("Markah berjaya disimpan secara live!");
+            } catch (error) {
+                console.error("Ralat menyimpan markah:", error);
             }
         }
 
-        function resetGame() {
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('flex');
-            
+        function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+        window.restartGame = function() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('game-wrapper').classList.add('hidden');
             document.getElementById('start-screen').classList.remove('hidden');
-            document.getElementById('start-screen').classList.add('flex');
-            
-            // reset progress bar width
-            document.getElementById('progress-bar').style.width = `0%`;
-            
-            // sembunyikan kotak hantar nama
-            document.getElementById('score-submission').classList.add('hidden');
-        }
-
-        // --- FUNGSI CARTA PEMENANG (LEADERBOARD) ---
-        function submitScore() {
-            const nameInput = document.getElementById('player-name');
-            const playerName = nameInput.value.trim().toUpperCase() || "ANONIM";
-            
-            const btn = nameInput.nextElementSibling;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> MENYIMPAN...';
-            btn.disabled = true;
-
-            setTimeout(() => {
-                try {
-                    // Simpan rekod ke dalam LocalStorage
-                    const lbKey = 'darvih-leaderboard-mbpk';
-                    let scoresList = JSON.parse(localStorage.getItem(lbKey) || '[]');
-                    
-                    scoresList.push({
-                        name: playerName,
-                        score: score,
-                        timestamp: Date.now()
-                    });
-                    
-                    localStorage.setItem(lbKey, JSON.stringify(scoresList));
-                    
-                    // Sembunyikan borang setelah berjaya
-                    document.getElementById('score-submission').classList.add('hidden');
-                    
-                    // Buka Carta Pemenang
-                    showLeaderboard();
-                } catch (error) {
-                    console.error("Ralat menyimpan markah:", error);
-                } finally {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            }, 500); // Simulasi masa pemprosesan
-        }
-
-        function showLeaderboard() {
-            document.getElementById('leaderboard-screen').classList.remove('hidden');
-            document.getElementById('leaderboard-screen').classList.add('flex');
-            
-            document.getElementById('leaderboard-list').innerHTML = `
-                <div class="text-center py-10 opacity-75 animate-pulse">
-                    <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-3"></i><br>
-                    Menyemak kedudukan...
-                </div>`;
-
-            setTimeout(() => {
-                try {
-                    const lbKey = 'darvih-leaderboard-mbpk';
-                    let scoresList = JSON.parse(localStorage.getItem(lbKey) || '[]');
-                    
-                    // Susun data: Markah Tertinggi di Atas. Jika seri, Masa Terawal menang.
-                    scoresList.sort((a, b) => {
-                        if (b.score !== a.score) return b.score - a.score;
-                        return a.timestamp - b.timestamp;
-                    });
-                    
-                    renderLeaderboardUI(scoresList);
-                } catch (error) {
-                    console.error("Ralat mengambil senarai:", error);
-                    document.getElementById('leaderboard-list').innerHTML = `
-                        <div class="text-center py-10 px-4 text-red-200">Ralat memuatkan data carta.</div>`;
-                }
-            }, 400); // Simulasi masa pemprosesan
-        }
-
-        function renderLeaderboardUI(scoresList) {
-            const listEl = document.getElementById('leaderboard-list');
-            listEl.innerHTML = '';
-            
-            if (scoresList.length === 0) {
-                listEl.innerHTML = `
-                    <div class="text-center py-10 opacity-75 text-xl font-medium text-indigo-100">
-                        Belum ada pemain. Jadi yang terawal!
-                    </div>`;
-                return;
-            }
-
-            // Papar carta pemenang
-            scoresList.forEach((entry, index) => {
-                const rank = index + 1;
-                let rankVisual = `<span class="font-bold text-indigo-800">${rank}</span>`;
-                let bgClass = "bg-white/20 text-white";
-                
-                // Gayakan berbeza untuk kedudukan Top 3
-                if (rank === 1) {
-                    rankVisual = `<i class="fa-solid fa-medal text-yellow-400 text-3xl"></i>`;
-                    bgClass = "bg-yellow-400/40 border border-yellow-300 text-white";
-                } else if (rank === 2) {
-                    rankVisual = `<i class="fa-solid fa-medal text-gray-300 text-3xl"></i>`;
-                    bgClass = "bg-gray-300/40 text-white border border-gray-300";
-                } else if (rank === 3) {
-                    rankVisual = `<i class="fa-solid fa-medal text-amber-600 text-3xl"></i>`;
-                    bgClass = "bg-amber-600/40 text-white border border-amber-600";
-                }
-
-                const itemHTML = `
-                    <div class="w-full flex justify-between items-center p-3 rounded-2xl ${bgClass} shadow-sm backdrop-blur-sm transition-transform hover:scale-[1.02]">
-                        <div class="w-12 text-center flex justify-center items-center">
-                            ${rankVisual}
-                        </div>
-                        <div class="flex-grow text-left font-bold text-xl px-3 truncate uppercase drop-shadow-sm">
-                            ${entry.name}
-                        </div>
-                        <div class="w-20 text-center font-extrabold text-3xl text-yellow-300 drop-shadow-md">
-                            ${entry.score}
-                        </div>
-                    </div>
-                `;
-                listEl.insertAdjacentHTML('beforeend', itemHTML);
-            });
-        }
-
-        function hideLeaderboard() {
-            document.getElementById('leaderboard-screen').classList.add('hidden');
-            document.getElementById('leaderboard-screen').classList.remove('flex');
-        }
-
+            document.getElementById('playerName').value = ''; 
+            document.getElementById('name-warning').classList.add('hidden');
+            playerName = "Pemain Misteri";
+        };
     </script>
 </body>
 </html>
